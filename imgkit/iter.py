@@ -2,7 +2,8 @@ from pathlib import Path
 from typing import Iterator
 
 # Adjust to whatever you actually process
-IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp"}
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".gif", ".bmp", ".webp"}
+
 
 def iter_media (directory: str | Path,
                 extensions: set[str] = IMAGE_EXTENSIONS,
@@ -34,5 +35,5 @@ def iter_media (directory: str | Path,
 #Test
 if __name__ == "__main__":
     from pathlib import Path
-    for p in iter_images(Path(".")):
+    for p in iter_media(Path(".")):
         print(p)
