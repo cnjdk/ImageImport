@@ -1,16 +1,13 @@
-import html
-import json
 import logging
-import os
 import shutil
-import sqlite3
 from pathlib import Path
-from urllib.parse import quote
 
 from PIL import Image, ImageOps
 
 from imgkit.iter import iter_media
 from imgkit.rename_stamp import stamp_owner_image, stamp_owner_video
+from imgkit.transform import transformWebPToGif
+
 
 
 def ingest_new_photos(
@@ -30,8 +27,20 @@ def ingest_new_photos(
 
  
     for source in iter_media(input_dir, extensions, recursive=False):
-        output_name = f"{owner}.{source.name}"
+        relative_path = source.relative_to(input_dir).as_posix()
 
+        match source.suffix.lower():
+            case ".webp":
+                if owner:
+                    output_name = f"{owner}.{source.stem}.gif"
+                else:
+                    output_name = f"{source.stem}.gif"
+            case _:
+                if owner:
+                    output_name = f"{owner}.{source.name}"
+                else:
+                    output_name = f"{source.name}"
+ 
         destination = output_dir / output_name
         if destination.exists():
             raise FileExistsError(
@@ -42,12 +51,22 @@ def ingest_new_photos(
         temporary = destination.with_name(
             f".{destination.stem}.tmp{destination.suffix}"
         )
-        shutil.copy2(source, temporary)
-        if source.suffix.lower() in {".jpg", ".jpeg"}:
-            stamp_owner_image(temporary, owner)
+        match source.suffix.lower():
+            case ".webp":
+                transformWebPToGif(source, temporary)
+            case _:            
+                shutil.copy2(source, temporary)
+
+        match source.suffix.lower():
+            case ".jpg" | ".jpeg":
+                stamp_owner_image(temporary, owner)
+            case _:
+                pass
+
         temporary.replace(destination)
         temporary.unlink(missing_ok=True)
         logging.info("OK %s -> %s", relative_path, destination.name)
+        source.unlink(missing_ok=True)
         processed += 1
     return processed
 
@@ -57,7 +76,7 @@ def ingest_new_videos(
     owner:          str,
     extensions:     set[str],
     ) -> int:
-     input_dir = Path(input_dir).expanduser().resolve()
+    input_dir = Path(input_dir).expanduser().resolve()
     output_dir = Path(output_dir).expanduser().resolve()
     if not input_dir.is_dir():
         raise NotADirectoryError(input_dir)
@@ -80,12 +99,11 @@ def ingest_new_videos(
             f".{destination.stem}.tmp{destination.suffix}"
         )
         shutil.copy2(source, temporary)
-        if source.suffix.lower() in {".mp4"}:
-            stamp_owner_video(temporary, owner)
-        os.utime(
-            temporary,
-            ns=(source_stat.st_atime_ns, source_stat.st_mtime_ns),
-        )
+        match source.suffix.lower():
+            case ".mp4" | ".mpg"    :
+                stamp_owner_video(temporary, owner)
+            case _:
+                pass
         temporary.replace(destination)
         temporary.unlink(missing_ok=True)
  

@@ -19,10 +19,17 @@ Install dependencies with `python3 -m pip install -r requirements.txt`.
 Run `python3 import.py` after copying new footage into `INPUT_DIR`. The script
 recursively copies supported photos to `OUTPUT_DIR`, prepends owner info to
 the filename, and adds Artist/Copyright EXIF tags to JPEG copies and iTunes-style
-(QuickTime) tags to MP4 files. Other supported formats are copied unchanged.
-Originals in `INPUT_DIR` are never modified. The SQLite database registers each
-successful import by its relative input path and file stat.
+(QuickTime) tags to MP4 files. WEBP files are converted into GIF, probably animated.
+Other supported formats are copied unchanged.
+Originals in `INPUT_DIR` are deleted after modification. 
 
-Already registered inputs are skipped even when their prepared copy has been
-deleted. 
+Supports two sets of defaults: If no parameters are specified, it will use my
+standard photo workflow. If "-a x" is specified, it will use my special purpose
+workflow. In both cases, it will prompt you whether you can accept the defaults and
+you can override the choice. 
+
+You can also specify the three values, input directory, output directory, owner/artist name
+on the command line using -i, -o and -u respectively. In these case it will use the values
+without prompt.
+
 
