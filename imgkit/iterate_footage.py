@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 
 from imgkit.iter import iter_media
 from imgkit.rename_stamp import stamp_owner_image, stamp_owner_video
-from imgkit.transform import transformWebPToGif
+from imgkit.transform import transformWebPToGif, checkAnimatedWebP
 
 
 
@@ -29,17 +29,21 @@ def ingest_new_photos(
     for source in iter_media(input_dir, extensions, recursive=False):
         relative_path = source.relative_to(input_dir).as_posix()
 
+        if owner:
+            owner = owner + "."
+        else:
+            owner = ""
+
+        output_name = ""
+
         match source.suffix.lower():
             case ".webp":
-                if owner:
-                    output_name = f"{owner}.{source.stem}.gif"
+                if checkAnimatedWebP(source):
+                    output_name = f"{owner}{source.stem}.gif"
                 else:
-                    output_name = f"{source.stem}.gif"
+                    output_name = f"{owner}{source.name}"
             case _:
-                if owner:
-                    output_name = f"{owner}.{source.name}"
-                else:
-                    output_name = f"{source.name}"
+                output_name = f"{owner}{source.name}"
  
         destination = output_dir / output_name
         if destination.exists():
@@ -66,7 +70,7 @@ def ingest_new_photos(
         temporary.replace(destination)
         temporary.unlink(missing_ok=True)
         logging.info("OK %s -> %s", relative_path, destination.name)
-        source.unlink(missing_ok=True)
+        #source.unlink(missing_ok=True)
         processed += 1
     return processed
 
